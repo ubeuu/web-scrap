@@ -241,4 +241,7 @@ $RECYCLE.BIN/
 *.yml
 *.properties
 
+# chrome driver
+chrome-driver
+
 # End of https://www.toptal.com/developers/gitignore/api/windows,java,macos,intellij
