@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 
 @RestController
 @Slf4j
-public class NikeController {
+public class NikeScrapper {
     @Autowired
     private WebDriver driver;
 
@@ -36,6 +36,7 @@ public class NikeController {
 
     private ScrapResponse getLaunchSiteData(String url) {
         driver.get(url);
+        //페이지 로드 대기
         driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
 
         String html = driver.getPageSource();
@@ -50,16 +51,16 @@ public class NikeController {
                 .toList();
 
         //상품 정보 추출
-        Element itemInfo = document.selectFirst("div.product-info.ncss-col-sm-12.full.ta-sm-c");
+        Element itemInfo = document.selectFirst("div.product-info.ncss-col-sm-12.full");
         assert itemInfo != null;
         String itemName = itemInfo.selectFirst("h1").text();
         String itemSubName = itemInfo.selectFirst("h2").text();
-        int price = Integer.parseInt(itemInfo.selectFirst("div[data-qa=price]").text().replace(" 원", "").replace(",",""));
+        int price = Integer.parseInt(itemInfo.selectFirst("div[data-qa=price], div.headline-5").text().replace(" 원", "").replace(",",""));
         log.info("info: {}, {}, {}", itemName, itemSubName, price);
 
 
         //상품 코드 추출
-        Element itemInfo2 = document.selectFirst("div.description-text.text-color-grey.mb9-sm.ta-sm-c");
+        Element itemInfo2 = document.selectFirst("div.description-text.text-color-grey");
         assert itemInfo2 != null;
         String itemCode = itemInfo2.selectFirst("p").html()
                 .split("<br>")[1].trim();
