@@ -1,2 +1,2 @@
-chrome:
-  driver: chrome-driver/chromedriver-linux64/chromedriver
+driver:
+  folder: chrome-driver
