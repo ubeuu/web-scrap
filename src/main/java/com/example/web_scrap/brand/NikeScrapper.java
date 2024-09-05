@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @RestController
 @Slf4j
@@ -23,9 +25,9 @@ public class NikeScrapper {
     @Autowired
     private WebDriver driver;
 
-    @GetMapping("/item/images")
-    public ScrapResponse extractItemImagesFromUrl(@RequestBody ScrapRequest request) throws IOException {
-        log.info("url 확인: {}", request.url());
+    @GetMapping("/item/infos")
+    public ScrapResponse extractItemInfosFromUrl(@RequestBody ScrapRequest request) throws IOException {
+        log.info("-- url 확인: {}", request.url());
         String url = request.url();
         if (url.contains("launch")) {
             return getLaunchSiteData(url);
@@ -42,30 +44,37 @@ public class NikeScrapper {
         String html = driver.getPageSource();
         Document document = Jsoup.parse(html);
 
-        //이미지 추출
+        // 이미지 추출
         String className = "image-component.u-full-width.pdp-image";
         Elements imgElements = document.select("img." + className);
-        log.info("이미지 요소 모음: {}", imgElements);
+        log.info("-- 이미지 요소: {}", imgElements);
         List<String> images = imgElements.stream()
                 .map(e -> e.attr("src"))
                 .toList();
 
-        //상품 정보 추출
+        // 상품 정보 추출
         Element itemInfo = document.selectFirst("div.product-info.ncss-col-sm-12.full");
         assert itemInfo != null;
         String itemName = itemInfo.selectFirst("h1").text();
         String itemSubName = itemInfo.selectFirst("h2").text();
-        int price = Integer.parseInt(itemInfo.selectFirst("div[data-qa=price], div.headline-5").text().replace(" 원", "").replace(",",""));
-        log.info("info: {}, {}, {}", itemName, itemSubName, price);
+        int price = Integer.parseInt(itemInfo.selectFirst("div[data-qa=price], div.headline-5").text().replace(" 원", "").replace(",", ""));
+        log.info("-- 상품 정보: {}, {}, {}", itemName, itemSubName, price);
 
 
-        //상품 코드 추출
+        // 상품 코드 추출
         Element itemInfo2 = document.selectFirst("div.description-text.text-color-grey");
         assert itemInfo2 != null;
-        String itemCode = itemInfo2.selectFirst("p").html()
-                .split("<br>")[1].trim();
-        log.info("code: {}", itemCode);
 
+        // 본문의 상품코드 패턴을 정규표현식으로 표현 ([문자 3개]:[문자, 공백 6개이상]-[문자 3개이상])
+        String regex = "[A-Z0-9]{3}:[A-Z0-9 ]{6,}-[A-Z0-9]{3,}";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(itemInfo2.selectFirst("p").html());
+
+        String itemCode = null;
+        if (matcher.find()) {
+            itemCode = matcher.group();
+            log.info("-- 상품코드: {}", itemCode);
+        }
         return new ScrapResponse(itemName + " " + itemSubName, itemCode, price, images);
     }
 }
