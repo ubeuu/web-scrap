@@ -238,6 +238,6 @@ $RECYCLE.BIN/
 *.lnk
 
 # Setting file
-
+chrome-driver
 
 # End of https://www.toptal.com/developers/gitignore/api/windows,java,macos,intellij
