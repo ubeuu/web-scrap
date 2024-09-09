@@ -1,10 +1,9 @@
 package com.example.web_scrap.config;
 
-import com.example.web_scrap.util.DriverManager;
+import io.github.bonigarcia.wdm.WebDriverManager;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.springframework.context.annotation.Bean;
@@ -20,23 +19,9 @@ public class WebDriverConfig {
 
     @Bean
     public WebDriver webDriver() throws IOException {
-        ChromeOptions chromeOptions = new ChromeOptions();
-        chromeOptions.addArguments("--headless"); //헤드리스 모드로 실행
-        chromeOptions.addArguments("window-size=1920x1080");
-        chromeOptions.addArguments("--lang=ko"); //브라우저 언어를 한국어로 설정
-        chromeOptions.addArguments("--no-sandbox"); //샌드박스 모드 비활성화
-        chromeOptions.addArguments("--disable-dev-shm-usage"); // /dev/shm 사용 비활성화
-        chromeOptions.addArguments("--disable-gpu"); //GPU 가속 비활성화
-        try {
-            return new ChromeDriver(chromeOptions);
-        } catch (WebDriverException e) {
-            log.info("-- 크롬과 드라이버 버전 미일치 예외 발생 -> 새로 드라이버 설치하고 실행");
-            DriverManager.setDriver();
-            return new ChromeDriver(chromeOptions);
-        } catch (Exception e) {
-            log.info("-- 기타 예외 발생");
-            throw e;
-        }
+        ChromeOptions chromeOptions = getChromeOptions();
+        WebDriverManager.chromedriver().setup();
+        return new ChromeDriver(chromeOptions);
     }
 
     @PostConstruct
@@ -49,6 +34,17 @@ public class WebDriverConfig {
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         String version = reader.readLine();
         log.info("-- Chrome Version: " + version);
+    }
+
+    private ChromeOptions getChromeOptions() {
+        ChromeOptions chromeOptions = new ChromeOptions();
+        chromeOptions.addArguments("--headless"); //헤드리스 모드로 실행
+        chromeOptions.addArguments("window-size=1920x1080");
+        chromeOptions.addArguments("--lang=ko"); //브라우저 언어를 한국어로 설정
+        chromeOptions.addArguments("--no-sandbox"); //샌드박스 모드 비활성화
+        chromeOptions.addArguments("--disable-dev-shm-usage"); // /dev/shm 사용 비활성화
+        chromeOptions.addArguments("--disable-gpu"); //GPU 가속 비활성화
+        return chromeOptions;
     }
 
     private String getOsPath() {
