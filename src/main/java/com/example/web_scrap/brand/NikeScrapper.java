@@ -7,13 +7,18 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -38,8 +43,9 @@ public class NikeScrapper {
 
     private ScrapResponse getLaunchSiteData(String url) {
         driver.get(url);
-        //페이지 로드 대기
-        driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
+        // 페이지 로드 대기 (이미지 태그, 10초)
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.tagName("img")));
 
         String html = driver.getPageSource();
         Document document = Jsoup.parse(html);
@@ -47,6 +53,7 @@ public class NikeScrapper {
         // 이미지 추출
         String className = "image-component.u-full-width.pdp-image";
         Elements imgElements = document.select("img." + className);
+
         log.info("-- 이미지 요소: {}", imgElements);
         List<String> images = imgElements.stream()
                 .map(e -> e.attr("src"))
