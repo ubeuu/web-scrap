@@ -43,57 +43,58 @@ public class NikeScrapper {
     private ScrapResponse getLaunchSiteData(String url) {
         driver.manage().window().setSize(new Dimension(1920, 1080));
         driver.get(url);
-        // 페이지 로드 대기 (이미지 태그, 10초)
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-        //wait.until(ExpectedConditions.visibilityOfElementLocated(By.tagName("img")));
+        // 페이지 로드 대기 (이미지 태그, 5초)
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.tagName("img")));
 
         String html = driver.getPageSource();
         Document document = Jsoup.parse(html);
 
         // 이미지 추출
-        String className = "image-component.u-full-width.pdp-image";
-        Elements imgElements = document.select("img." + className);
+        Elements imgElements = document.select("img.image-img.should-transition");
 
-        log.info("-- 이미지 요소: {}", imgElements);
+        log.info("-- 이미지 요소: {}", imgElements.text());
         List<String> images = imgElements.stream()
                 .map(e -> e.attr("src"))
                 .toList();
 
         // 상품 메인명+서브명, 가격 추출
         Element itemInfo = document.selectFirst("div.product-info");
-        String itemMainName = null;
-        String itemSubName = null;
+        String mainName = null;
+        String subName = null;
         Integer price = null;
         if (itemInfo != null) {
-            itemMainName = itemInfo.selectFirst("h1").text();
-            itemSubName = itemInfo.selectFirst("h2").text();
-            price = Integer.parseInt(itemInfo.selectFirst("div[data-qa=price], div.headline-5").text().replace(" 원", "").replace(",", ""));
-            log.info("-- 상품 정보: {}, {}, {}", itemMainName, itemSubName, price);
+           mainName = itemInfo.selectFirst("h1").text();
+            subName = itemInfo.selectFirst("h2").text();
+            price = Integer.parseInt(itemInfo.selectFirst("div[data-qa=price], div.headline-5").text()
+                    .replace(" 원", "")
+                    .replace(",", ""));
+            log.info("-- 상품 정보: {}, {}, {}",mainName, subName, price);
         }
 
         // 상품 코드 추출
-        Matcher matcher = getItemInfo2(document);
+        Matcher matcher = getItemCodeInfo(document);
         String itemCode = null;
         if (matcher.find()) {
             itemCode = matcher.group();
             log.info("-- 상품코드: {}", itemCode);
         }
-        return new ScrapResponse(itemMainName + " " + itemSubName, itemCode, price, images);
+        return new ScrapResponse(mainName + " " + subName, itemCode, price, images);
     }
 
-    private Matcher getItemInfo2(Document document) {
+    private Matcher getItemCodeInfo(Document document) {
         // 본문의 상품코드 패턴을 정규표현식으로 표현 ([문자 3개]:[문자, 공백 6개이상]-[문자 3개이상])
         Pattern pattern = Pattern.compile("[A-Z0-9]{3}:[A-Z0-9 ]{6,}-[A-Z0-9]{3,}");
 
-        Element itemInfo1 = document.selectFirst("div.description-text.text-color-grey");
-        log.info("-- itemInfo1: {}", itemInfo1);
+        Element codeElement1 = document.selectFirst("div.description-text.text-color-grey");
+        log.info("-- codeElement1: {}", codeElement1);
 
-        if (itemInfo1 == null) {
-            Elements itemInfo2 = document.select("div.available-date-component");
-            log.info("-- itemInfo2: {}", itemInfo2.text());
-            return pattern.matcher(itemInfo2.text());
+        if (codeElement1 == null) {
+            Elements codeElement2 = document.select("div.available-date-component");
+            log.info("-- codeElement2: {}", codeElement2.text());
+            return pattern.matcher(codeElement2.text());
         } else {
-            return pattern.matcher(itemInfo1.selectFirst("p").html());
+            return pattern.matcher(codeElement1.selectFirst("p").html());
         }
     }
 }

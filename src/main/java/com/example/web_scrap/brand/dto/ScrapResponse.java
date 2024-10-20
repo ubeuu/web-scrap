@@ -5,7 +5,7 @@ import java.util.List;
 public record ScrapResponse(
         String name,
         String code,
-        int price,
+        Integer price,
         List<String> images
 ) {
 }
