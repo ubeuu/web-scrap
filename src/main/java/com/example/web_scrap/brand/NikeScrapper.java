@@ -29,7 +29,7 @@ public class NikeScrapper {
     @Autowired
     private WebDriver driver;
 
-    @GetMapping("/item/infos")
+    @GetMapping("/nike/item/infos")
     public ScrapResponse extractItemInfosFromUrl(@RequestBody ScrapRequest request) throws IOException {
         log.info("-- url 확인: {}", request.url());
         String url = request.url();
@@ -50,51 +50,70 @@ public class NikeScrapper {
         String html = driver.getPageSource();
         Document document = Jsoup.parse(html);
 
-        // 이미지 추출
-        Elements imgElements = document.select("img.image-img.should-transition");
+        String name = parseName(document);
+        Integer price = parsePrice(document);
+        String code = parseItemCode(document);
+        List<String> images = parseImage(document);
 
-        log.info("-- 이미지 요소: {}", imgElements.text());
-        List<String> images = imgElements.stream()
-                .map(e -> e.attr("src"))
-                .toList();
-
-        // 상품 메인명+서브명, 가격 추출
-        Element itemInfo = document.selectFirst("div.product-info");
-        String mainName = null;
-        String subName = null;
-        Integer price = null;
-        if (itemInfo != null) {
-           mainName = itemInfo.selectFirst("h1").text();
-            subName = itemInfo.selectFirst("h2").text();
-            price = Integer.parseInt(itemInfo.selectFirst("div[data-qa=price], div.headline-5").text()
-                    .replace(" 원", "")
-                    .replace(",", ""));
-            log.info("-- 상품 정보: {}, {}, {}",mainName, subName, price);
-        }
-
-        // 상품 코드 추출
-        Matcher matcher = getItemCodeInfo(document);
-        String itemCode = null;
-        if (matcher.find()) {
-            itemCode = matcher.group();
-            log.info("-- 상품코드: {}", itemCode);
-        }
-        return new ScrapResponse(mainName + " " + subName, itemCode, price, images);
+        return new ScrapResponse(name, code, price, images);
     }
 
-    private Matcher getItemCodeInfo(Document document) {
+    private String parseItemCode(Document document) {
+        // 상품 코드 추출
         // 본문의 상품코드 패턴을 정규표현식으로 표현 ([문자 3개]:[문자, 공백 6개이상]-[문자 3개이상])
         Pattern pattern = Pattern.compile("[A-Z0-9]{3}:[A-Z0-9 ]{6,}-[A-Z0-9]{3,}");
 
         Element codeElement1 = document.selectFirst("div.description-text.text-color-grey");
         log.info("-- codeElement1: {}", codeElement1);
-
+        Matcher matcher = null;
         if (codeElement1 == null) {
             Elements codeElement2 = document.select("div.available-date-component");
             log.info("-- codeElement2: {}", codeElement2.text());
-            return pattern.matcher(codeElement2.text());
+            matcher = pattern.matcher(codeElement2.text());
         } else {
-            return pattern.matcher(codeElement1.selectFirst("p").html());
+            matcher = pattern.matcher(codeElement1.selectFirst("p").html());
         }
+
+        String itemCode = null;
+        if (matcher.find()) {
+            itemCode = matcher.group();
+            log.info("-- 상품코드: {}", itemCode);
+        }
+        return itemCode;
+    }
+
+    private List<String> parseImage(Document document) {
+        // 이미지 추출
+        Elements imgElements = document.select("img.image-img.should-transition");
+        log.info("-- 이미지 요소: {}", imgElements.text());
+
+        return imgElements.stream()
+                .map(e -> e.attr("src"))
+                .toList();
+    }
+
+    private String parseName(Document document) {
+        // 상품 메인명+서브명, 가격 추출
+        Element itemInfo = document.selectFirst("div.product-info");
+        String main = null;
+        String sub = null;
+        if (itemInfo != null) {
+            main = itemInfo.selectFirst("h1").text();
+            sub = itemInfo.selectFirst("h2").text();
+            log.info("-- 상품 메인+서브명: {}, {}", main, sub);
+        }
+        return main + sub;
+    }
+
+    private Integer parsePrice(Document document) {
+        Element itemInfo = document.selectFirst("div.product-info");
+        Integer price = null;
+        if (itemInfo != null) {
+            price = Integer.parseInt(itemInfo.selectFirst("div[data-qa=price], div.headline-5").text()
+                    .replace(" 원", "")
+                    .replace(",", ""));
+            log.info("-- 상품 정보: {}", price);
+        }
+        return price;
     }
 }
