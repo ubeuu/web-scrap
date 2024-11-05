@@ -35,9 +35,10 @@ dependencies {
     implementation("io.github.bonigarcia:webdrivermanager:5.7.0")
     //test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testCompileOnly ("org.projectlombok:lombok")
     testAnnotationProcessor ("org.projectlombok:lombok")
+    testImplementation ("org.mockito:mockito-core:5.2.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.2.0")
 }
 
 tasks.withType<Test> {

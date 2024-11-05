@@ -15,11 +15,13 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,9 +32,9 @@ public class NikeScrapper {
     private WebDriver driver;
 
     @GetMapping("/nike/item/infos")
-    public ScrapResponse extractItemInfosFromUrl(@RequestBody ScrapRequest request) throws IOException {
-        log.info("-- url 확인: {}", request.url());
-        String url = request.url();
+    public ScrapResponse extractItemInfosFromUrl(@RequestParam String url) throws IOException {
+        //todo request 클래스 제거 필요
+        log.info("-- url 확인: {}", url);
         if (url.contains("launch")) {
             return getLaunchSiteData(url);
         } else {
@@ -98,21 +100,29 @@ public class NikeScrapper {
         String main = null;
         String sub = null;
         if (itemInfo != null) {
-            main = itemInfo.selectFirst("h1").text();
-            sub = itemInfo.selectFirst("h2").text();
+            main = Optional.ofNullable(itemInfo.selectFirst("h1"))
+                    .map(Element::text)
+                    .orElse(null);
+            sub = Optional.ofNullable(itemInfo.selectFirst("h2"))
+                    .map(Element::text)
+                    .orElse(null);
             log.info("-- 상품 메인+서브명: {}, {}", main, sub);
         }
-        return main + sub;
+        return main + " " + sub;
     }
 
     private Integer parsePrice(Document document) {
         Element itemInfo = document.selectFirst("div.product-info");
         Integer price = null;
         if (itemInfo != null) {
-            price = Integer.parseInt(itemInfo.selectFirst("div[data-qa=price], div.headline-5").text()
-                    .replace(" 원", "")
-                    .replace(",", ""));
-            log.info("-- 상품 정보: {}", price);
+            price = Integer.parseInt(
+                    Optional.ofNullable(itemInfo.selectFirst("div[data-qa=price], div.headline-5"))
+                            .map(Element::text)
+                            .orElse("0")
+                            .replace(" 원", "")
+                            .replace(",", ""));
+
+            log.info("-- 상품 가격: {}", price);
         }
         return price;
     }
