@@ -65,15 +65,15 @@ public class NikeScrapper {
         // 본문의 상품코드 패턴을 정규표현식으로 표현 ([문자 3개]:[문자, 공백 6개이상]-[문자 3개이상])
         Pattern pattern = Pattern.compile("[A-Z0-9]{3}:[A-Z0-9 ]{6,}-[A-Z0-9]{3,}");
 
-        Element codeElement1 = document.selectFirst("div.description-text.text-color-grey");
-        log.info("-- codeElement1: {}", codeElement1);
+        Element condition1 = document.selectFirst("div.description-text.text-color-grey");
+        log.info("-- condition1: {}", condition1);
         Matcher matcher = null;
-        if (codeElement1 == null) {
-            Elements codeElement2 = document.select("div.available-date-component");
-            log.info("-- codeElement2: {}", codeElement2.text());
-            matcher = pattern.matcher(codeElement2.text());
+        if (condition1 == null) {
+            Elements condition2 = document.select("div.available-date-component");
+            log.info("-- condition2: {}", condition2);
+            matcher = pattern.matcher(condition2.text());
         } else {
-            matcher = pattern.matcher(codeElement1.selectFirst("p").html());
+            matcher = pattern.matcher(condition1.selectFirst("p").html());
         }
 
         String itemCode = null;
