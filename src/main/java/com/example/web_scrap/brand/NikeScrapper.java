@@ -108,7 +108,7 @@ public class NikeScrapper {
                     .orElse(null);
             log.info("-- 상품 메인+서브명: {}, {}", main, sub);
         }
-        return main + " " + sub;
+        return (main == null && sub == null) ? null : main + " " + sub;
     }
 
     private Integer parsePrice(Document document) {

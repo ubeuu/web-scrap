@@ -89,6 +89,23 @@ class NikeScrapperTest {
                 .andExpect(jsonPath("$.code", is("SKU: HF0551-300")));
     }
 
+    @Test
+    void test_parseItemImage() throws Exception {
+        driverMocking();
+        String tags="<picture>" +
+                "<img alt=\"에어 폼포짓 원 'Jin'(HF6367-001) 출시일\" class=\"image-img should-transition\" " +
+                "data-testid=\"image-img\" src=\"https://static.nike.com/a/image.jpg\" " +
+                "style=\"opacity: 1;\" loading=\"lazy\">" +
+                "</picture>";
+        given(driver.getPageSource()).willReturn(tags);
+
+        //when, then
+        mvc.perform(get("/nike/item/infos")
+                        .param("url", url))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.images[0]", is("https://static.nike.com/a/image.jpg")));
+    }
+
     private void driverMocking() {
         // driver 세팅 모킹
         Options options = mock(Options.class);
