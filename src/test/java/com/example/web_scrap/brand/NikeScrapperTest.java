@@ -1,16 +1,15 @@
 package com.example.web_scrap.brand;
 
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.By;
-import org.openqa.selenium.Dimension;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.openqa.selenium.WebDriver.*;
 
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -91,6 +90,7 @@ class NikeScrapperTest {
 
     @Test
     void test_parseItemImage() throws Exception {
+        //given
         driverMocking();
         String tags="<picture>" +
                 "<img alt=\"에어 폼포짓 원 'Jin'(HF6367-001) 출시일\" class=\"image-img should-transition\" " +
@@ -122,4 +122,22 @@ class NikeScrapperTest {
         when(imgElement.isDisplayed()).thenReturn(true);
     }
     //2. 예외 테스트(스크랩 시간 or 페이지 로드 지연시 예외 처리/일부 누락돼도 나머지 데이터 출력 확인)
+    @Test
+    void url_connect_fail() throws Exception {
+        //given
+        Options options = mock(Options.class);
+        Window window = mock(Window.class);
+        given(driver.manage()).willReturn(options);
+        given(options.window()).willReturn(window);
+        doNothing().when(window).setSize(new Dimension(1920, 1080));
+
+        doThrow(new WebDriverException()).when(driver).get(url);
+
+        //when, then
+        mvc.perform(get("/nike/item/infos")
+                        .param("url", url))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.code", is("ERR002")))
+                .andExpect(jsonPath("$.message", is("연결 실패")));
+    }
 }
