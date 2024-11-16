@@ -8,8 +8,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.openqa.selenium.WebDriver.*;
 
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -25,15 +23,14 @@ class NikeScrapperTest {
     WebDriver driver;
     private String url = "http://www.test.site/launch";
 
-    //1. 함수가 제대로 동작하는지 (모의 태그 입력시 원하는 값만 추출 가능한지)
     @Test
     void test_parseItemName() throws Exception {
         //given
         driverMocking();
         String tags = "<div class=\"product-info product-info-padding\">" +
-                        "<h1 class=\"nds-text pb3-sm css-1rhjrcc e1yhcai00 appearance-body1Strong color-primary weight-regular\">에어 폼포짓 원</h1>" +
-                        "<h2 class=\"nds-text pb3-sm css-11pxkba e1yhcai00 appearance-title3 color-primary weight-regular\">Jin</h2>" +
-                        "</div>";
+                "<h1 class=\"nds-text pb3-sm css-1rhjrcc e1yhcai00 appearance-body1Strong color-primary weight-regular\">에어 폼포짓 원</h1>" +
+                "<h2 class=\"nds-text pb3-sm css-11pxkba e1yhcai00 appearance-title3 color-primary weight-regular\">Jin</h2>" +
+                "</div>";
         given(driver.getPageSource()).willReturn(tags);
 
         //when, then
@@ -48,8 +45,8 @@ class NikeScrapperTest {
         //given
         driverMocking();
         String tags = "<div class=\"product-info product-info-padding\">" +
-                        "<div class=\"headline-5 pb6-sm fs14-sm fs16-md\">" +
-                        "299,000 원 </div>";
+                "<div class=\"headline-5 pb6-sm fs14-sm fs16-md\">" +
+                "299,000 원 </div>";
         given(driver.getPageSource()).willReturn(tags);
 
         //when, then
@@ -92,7 +89,7 @@ class NikeScrapperTest {
     void test_parseItemImage() throws Exception {
         //given
         driverMocking();
-        String tags="<picture>" +
+        String tags = "<picture>" +
                 "<img alt=\"에어 폼포짓 원 'Jin'(HF6367-001) 출시일\" class=\"image-img should-transition\" " +
                 "data-testid=\"image-img\" src=\"https://static.nike.com/a/image.jpg\" " +
                 "style=\"opacity: 1;\" loading=\"lazy\">" +
@@ -121,7 +118,7 @@ class NikeScrapperTest {
         when(driver.findElement(By.tagName("img"))).thenReturn(imgElement);
         when(imgElement.isDisplayed()).thenReturn(true);
     }
-    //2. 예외 테스트(스크랩 시간 or 페이지 로드 지연시 예외 처리/일부 누락돼도 나머지 데이터 출력 확인)
+
     @Test
     void url_connect_fail() throws Exception {
         //given

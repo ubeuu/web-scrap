@@ -1,6 +1,5 @@
 package com.example.web_scrap.brand;
 
-import com.example.web_scrap.brand.dto.ScrapRequest;
 import com.example.web_scrap.brand.dto.ScrapResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -9,7 +8,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
-import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -33,7 +31,6 @@ public class NikeScrapper {
 
     @GetMapping("/nike/item/infos")
     public ScrapResponse extractItemInfosFromUrl(@RequestParam String url) throws IOException {
-        //todo request 클래스 제거 필요
         log.info("-- url 확인: {}", url);
         if (url.contains("launch")) {
             return getLaunchSiteData(url);
@@ -95,7 +92,7 @@ public class NikeScrapper {
     }
 
     private String parseName(Document document) {
-        // 상품 메인명+서브명, 가격 추출
+        // 상품 메인명+서브명 추출
         Element itemInfo = document.selectFirst("div.product-info");
         String main = null;
         String sub = null;
@@ -112,6 +109,7 @@ public class NikeScrapper {
     }
 
     private Integer parsePrice(Document document) {
+        // 상품 가격 추출
         Element itemInfo = document.selectFirst("div.product-info");
         Integer price = null;
         if (itemInfo != null) {
