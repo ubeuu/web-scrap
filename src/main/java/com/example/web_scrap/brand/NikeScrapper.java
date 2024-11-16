@@ -1,6 +1,5 @@
 package com.example.web_scrap.brand;
 
-import com.example.web_scrap.brand.dto.ScrapRequest;
 import com.example.web_scrap.brand.dto.ScrapResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -14,12 +13,13 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,9 +30,8 @@ public class NikeScrapper {
     private WebDriver driver;
 
     @GetMapping("/nike/item/infos")
-    public ScrapResponse extractItemInfosFromUrl(@RequestBody ScrapRequest request) throws IOException {
-        log.info("-- url 확인: {}", request.url());
-        String url = request.url();
+    public ScrapResponse extractItemInfosFromUrl(@RequestParam String url) throws IOException {
+        log.info("-- url 확인: {}", url);
         if (url.contains("launch")) {
             return getLaunchSiteData(url);
         } else {
@@ -63,15 +62,15 @@ public class NikeScrapper {
         // 본문의 상품코드 패턴을 정규표현식으로 표현 ([문자 3개]:[문자, 공백 6개이상]-[문자 3개이상])
         Pattern pattern = Pattern.compile("[A-Z0-9]{3}:[A-Z0-9 ]{6,}-[A-Z0-9]{3,}");
 
-        Element codeElement1 = document.selectFirst("div.description-text.text-color-grey");
-        log.info("-- codeElement1: {}", codeElement1);
+        Element condition1 = document.selectFirst("div.description-text.text-color-grey");
+        log.info("-- condition1: {}", condition1);
         Matcher matcher = null;
-        if (codeElement1 == null) {
-            Elements codeElement2 = document.select("div.available-date-component");
-            log.info("-- codeElement2: {}", codeElement2.text());
-            matcher = pattern.matcher(codeElement2.text());
+        if (condition1 == null) {
+            Elements condition2 = document.select("div.available-date-component");
+            log.info("-- condition2: {}", condition2);
+            matcher = pattern.matcher(condition2.text());
         } else {
-            matcher = pattern.matcher(codeElement1.selectFirst("p").html());
+            matcher = pattern.matcher(condition1.selectFirst("p").html());
         }
 
         String itemCode = null;
@@ -93,26 +92,35 @@ public class NikeScrapper {
     }
 
     private String parseName(Document document) {
-        // 상품 메인명+서브명, 가격 추출
+        // 상품 메인명+서브명 추출
         Element itemInfo = document.selectFirst("div.product-info");
         String main = null;
         String sub = null;
         if (itemInfo != null) {
-            main = itemInfo.selectFirst("h1").text();
-            sub = itemInfo.selectFirst("h2").text();
+            main = Optional.ofNullable(itemInfo.selectFirst("h1"))
+                    .map(Element::text)
+                    .orElse(null);
+            sub = Optional.ofNullable(itemInfo.selectFirst("h2"))
+                    .map(Element::text)
+                    .orElse(null);
             log.info("-- 상품 메인+서브명: {}, {}", main, sub);
         }
-        return main + sub;
+        return (main == null && sub == null) ? null : main + " " + sub;
     }
 
     private Integer parsePrice(Document document) {
+        // 상품 가격 추출
         Element itemInfo = document.selectFirst("div.product-info");
         Integer price = null;
         if (itemInfo != null) {
-            price = Integer.parseInt(itemInfo.selectFirst("div[data-qa=price], div.headline-5").text()
-                    .replace(" 원", "")
-                    .replace(",", ""));
-            log.info("-- 상품 정보: {}", price);
+            price = Integer.parseInt(
+                    Optional.ofNullable(itemInfo.selectFirst("div[data-qa=price], div.headline-5"))
+                            .map(Element::text)
+                            .orElse("0")
+                            .replace(" 원", "")
+                            .replace(",", ""));
+
+            log.info("-- 상품 가격: {}", price);
         }
         return price;
     }
